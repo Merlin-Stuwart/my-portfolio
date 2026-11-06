@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect x="24" y="24" width="464" height="464" rx="120" fill="url(#bgGrad)" stroke="url(#brandGrad)" stroke-width="12" />
+
+  <!-- Futuristic Geometric 'MS' Logo -->
+  <g filter="url(#glow)">
+    <!-- 'M' Segment -->
+    <path d="M 110 360 L 110 152 L 200 280 L 290 152 L 290 360" 
+          fill="none" 
+          stroke="url(#brandGrad)" 
+          stroke-width="38" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- 'S' Segment -->
+    <path d="M 400 175 C 380 145, 315 145, 315 205 C 315 265, 400 265, 400 325 C 400 385, 325 385, 295 355" 
+          fill="none" 
+          stroke="url(#brandGrad)" 
+          stroke-width="38" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+  </g>
+
+  <!-- Tech Glowing Core Dot -->
+  <circle cx="400" cy="145" r="22" fill="url(#accentGrad)" />
+</svg>

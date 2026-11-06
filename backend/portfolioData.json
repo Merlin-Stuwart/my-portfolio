@@ -1,0 +1,239 @@
+{
+  "profile": {
+    "name": "MERLIN STUWART",
+    "role": "AI/ML & Full-Stack Software Developer",
+    "tagline": "Building full-stack & AI-powered applications with Python, React.js, RAG systems, and LLMs.",
+    "location": "Bangalore, India",
+    "email": "merlinstuwart05@gmail.com",
+    "phone": "+91 6379113226",
+    "github": "https://github.com/Merlin-Stuwart",
+    "linkedin": "https://linkedin.com/in/merlin-stuwart",
+    "resumeUrl": "/Merlin_Stuwart_Resume.pdf",
+    "avatar1": "/profile1.png",
+    "avatar2": "/profile2.png",
+    "portfolioLiveCount": 2
+  },
+  "summary": "Junior Software Developer with 1+ year of hands-on experience building full-stack and AI-powered applications using Python, React.js, JavaScript, REST APIs, MySQL, and MongoDB. Delivered a production WhatsApp automation bot that cut manual agent response time by ~40%, and built RAG pipelines and fine-tuned LLMs for domain-specific Q&A systems. Trained Python Full-Stack Developer (JSpiders, 2023-2024) with a strong foundation in OOP, SDLC, and Agile/Scrum.",
+  "skills": [
+    {
+      "category": "Programming Languages",
+      "items": [
+        "Python",
+        "JavaScript",
+        "TypeScript"
+      ]
+    },
+    {
+      "category": "Web & Frameworks",
+      "items": [
+        "React.js",
+        "REST API Development",
+        "HTML5",
+        "CSS3",
+        "Electron"
+      ]
+    },
+    {
+      "category": "AI / ML & LLMs",
+      "items": [
+        "Machine Learning",
+        "LLM Fine-Tuning",
+        "RAG Pipelines",
+        "Vector Databases",
+        "NLP",
+        "Prompt Engineering"
+      ]
+    },
+    {
+      "category": "Databases & Tools",
+      "items": [
+        "MySQL",
+        "MongoDB",
+        "Docker",
+        "WhatsApp Business API",
+        "n8n Workflow Automation",
+        "Git/GitHub",
+        "Power BI",
+        "Salesforce CRM"
+      ]
+    },
+    {
+      "category": "Concepts & Practices",
+      "items": [
+        "SDLC",
+        "Object-Oriented Programming (OOP)",
+        "Agile/Scrum",
+        "Unit Testing",
+        "Debugging",
+        "API Integration",
+        "Version Control"
+      ]
+    }
+  ],
+  "experiences": [
+    {
+      "year": "Mar 2025 – Present",
+      "company": "Wyzmindz Solutions Pvt Ltd",
+      "title": "Junior Software Developer",
+      "description": "Independently designed and delivered a client-facing WhatsApp automation bot (production rollout). Integrated AI/ML components including LLMs and RAG pipelines into business apps. Developed full-stack features using Python, React.js, REST APIs, MySQL, and MongoDB."
+    },
+    {
+      "year": "2023 (1 Month)",
+      "company": "Salesforce Info Tech",
+      "title": "Project Management Intern",
+      "description": "Supported the Project Management team in tracking Salesforce-based project deliverables, gaining hands-on exposure to CRM workflows, documentation, and cross-team coordination."
+    }
+  ],
+  "projects": [
+    {
+      "id": "autosherpa-bot",
+      "title": "WhatsApp Business Automation Bot (Autosherpa)",
+      "category": "Automation",
+      "badge": "Production Rollout",
+      "live": true,
+      "liveUrl": "https://github.com/Merlin-Stuwart",
+      "githubUrl": "https://github.com/Merlin-Stuwart",
+      "tech": [
+        "Python",
+        "WhatsApp Business API",
+        "Docker",
+        "AI Intent Classification",
+        "REST API"
+      ],
+      "description": "Docker-containerized WhatsApp bot handling leads, bookings, and support workflows for real client deployment.",
+      "highlights": [
+        "Cut manual agent response time by ~40% in production.",
+        "Reduced first-response time from minutes to seconds with AI intent classification.",
+        "Fully containerized with Docker for seamless 24/7 cloud server deployment.",
+        "Integrated with backend APIs for real-time lead & booking state management."
+      ],
+      "architecture": "Python Backend → WhatsApp Cloud API → AI Intent Engine → Docker Container"
+    },
+    {
+      "id": "whatsapp-desktop-app",
+      "title": "WhatsApp Automation Desktop Application",
+      "category": "Full-Stack",
+      "badge": "Desktop App",
+      "live": true,
+      "liveUrl": "https://github.com/Merlin-Stuwart",
+      "githubUrl": "https://github.com/Merlin-Stuwart",
+      "tech": [
+        "Electron",
+        "JavaScript",
+        "TypeScript",
+        "Node.js",
+        "IPC Main/Renderer"
+      ],
+      "description": "Built a cross-platform desktop control app enabling non-technical staff to control and monitor multiple bot instances.",
+      "highlights": [
+        "Real-time session monitoring with start/stop controls for multiple bot instances.",
+        "Designed clean IPC communication between Electron renderer and background Node.js processes.",
+        "Built tailored dashboard UI eliminating manual agent oversight.",
+        "Packaged executable for Windows desktop deployment."
+      ],
+      "architecture": "Electron UI (Renderer) ↔ IPC Bridge ↔ Node.js Automation Runner"
+    },
+    {
+      "id": "neet-llm-assistant",
+      "title": "NEET Preparation Assistant — Fine-Tuned LLM",
+      "category": "AI & LLMs",
+      "badge": "AI / Fine-Tuning",
+      "live": false,
+      "liveUrl": "",
+      "githubUrl": "https://github.com/Merlin-Stuwart",
+      "tech": [
+        "Python",
+        "LLM Fine-Tuning",
+        "NLP",
+        "PyTorch",
+        "Prompt Engineering"
+      ],
+      "description": "Domain-specific Q&A and doubt-solving assistant fine-tuned on NEET Physics, Chemistry, and Biology syllabus.",
+      "highlights": [
+        "Fine-tuned open-weights LLM using domain-specific NEET medical exam dataset.",
+        "Outperformed generic LLM baselines on complex science doubt-solving accuracy.",
+        "Implemented structured prompt templates for step-by-step problem explanations.",
+        "Optimized model inference latency for interactive student Q&A."
+      ],
+      "architecture": "NEET Syllabus Dataset → Supervised Fine-Tuning (SFT) → Domain LLM Inference API"
+    },
+    {
+      "id": "suryajosvi-reflection-tracker",
+      "title": "Suryajosvi Reflection Trackers",
+      "category": "AI & LLMs",
+      "badge": "RAG & Vector DB",
+      "live": false,
+      "liveUrl": "",
+      "githubUrl": "https://github.com/Merlin-Stuwart",
+      "tech": [
+        "React.js",
+        "Python",
+        "Machine Learning",
+        "RAG Pipeline",
+        "Vector Database",
+        "Docker"
+      ],
+      "description": "Full-stack AI-powered reflection tracker retrieving personalized insights from personal journal entries.",
+      "highlights": [
+        "Built end-to-end RAG (Retrieval-Augmented Generation) pipeline over user journal vector embeddings.",
+        "Integrated vector database for fast semantic similarity search across historical reflections.",
+        "Developed responsive React dashboard with real-time insight visualizer.",
+        "Containerized backend & vector database services with Docker Compose."
+      ],
+      "architecture": "React Frontend ↔ FastAPI ↔ Vector Database (Embeddings) ↔ RAG Pipeline ↔ LLM",
+      "image": ""
+    }
+  ],
+  "stats": [
+    {
+      "label": "Hands-on Experience",
+      "value": "1+ Year"
+    },
+    {
+      "label": "Bot Response Impact",
+      "value": "~40% Cut"
+    },
+    {
+      "label": "Featured Projects",
+      "value": "4 Key Apps"
+    },
+    {
+      "label": "Core Technologies",
+      "value": "15+ Tools"
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.E. / B.Tech in Computer Science Engineering",
+      "institution": "Aarupadi Veedu Institute of Technology, Chennai",
+      "year": "2019 – 2023"
+    },
+    {
+      "degree": "Higher Secondary (12th)",
+      "institution": "Sri Vasavi Vidhyalaya Matriculation Higher Secondary School",
+      "year": "2019"
+    }
+  ],
+  "certifications": [
+    "Python Full Stack Development — JSpiders (2023–2024)",
+    "Microsoft Power BI Certified",
+    "n8n Yellow Belt Certification",
+    "Energy Swaraj Course"
+  ],
+  "testimonials": [
+    {
+      "name": "Software Engineering Lead",
+      "role": "Senior Developer / Tech Lead",
+      "company": "Wyzmindz Solutions",
+      "quote": "Merlin independently designed and shipped an automated WhatsApp Business bot to production that cut customer response latency by ~40%. His grasp on Python, Docker, and AI/ML pipelines is exceptional.",
+      "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=TechLead"
+    },
+    {
+      "name": "Project Manager",
+      "role": "CRM Project Lead",
+      "company": "Salesforce Info Tech",
+      "quote": "During his internship, Merlin demonstrated strong analytical skills, attention to detail, and seamless cross-team coordination on complex CRM deliverables.",
+      "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=ProjectManager"
+    }
+  ]
+}
