@@ -15,7 +15,7 @@ const PortfolioContext = createContext();
 
 export const PortfolioProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminPin, setAdminPin] = useState("1234");
+  const [adminPin, setAdminPin] = useState("");
 
   const [profileData, setProfileData] = useState(defaultProfile);
   const [summaryData, setSummaryData] = useState(defaultSummary);
@@ -47,7 +47,7 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     const fetchServerData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/portfolio-data");
+        const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data");
         const result = await response.json();
         if (result.success && result.data) {
           const d = result.data;
@@ -86,7 +86,7 @@ export const PortfolioProvider = ({ children }) => {
     };
 
     try {
-      await fetch("http://localhost:5000/api/portfolio-data", {
+      await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fullState),
@@ -145,7 +145,7 @@ export const PortfolioProvider = ({ children }) => {
 
   const loginAdmin = async (pin) => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/verify-pin", {
+      const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/admin/verify-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin }),
@@ -156,24 +156,30 @@ export const PortfolioProvider = ({ children }) => {
         return true;
       }
     } catch (e) {
-      if (pin === adminPin || pin === "1234" || pin === "admin123") {
-        setIsAdmin(true);
-        return true;
-      }
+
     }
     return false;
   };
 
-  const changeAdminPin = async (newPin) => {
-    setAdminPin(newPin);
+  const changeAdminPin = async (currentPin, newPin) => {
     try {
-      await fetch("http://localhost:5000/api/admin/change-pin", {
+      const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/admin/change-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPin }),
+        body: JSON.stringify({ currentPin, newPin }),
       });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAdminPin("");
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.warn("Could not sync new PIN with server:", e);
+      return false;
     }
   };
 
@@ -226,7 +232,7 @@ export const PortfolioProvider = ({ children }) => {
     };
 
     try {
-      await fetch("http://localhost:5000/api/portfolio-data", {
+      await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(defaultFullState),

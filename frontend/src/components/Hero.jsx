@@ -80,7 +80,7 @@ function Hero() {
     setUploadStatus(`Uploading ${targetField}...`);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/upload-avatar?targetField=${targetField}`, {
+      const response = await fetch(`https://my-portfolio-backend-zegg.onrender.com/api/upload-avatar?targetField=${targetField}`, {
         method: "POST",
         body: formData,
       });
@@ -89,7 +89,7 @@ function Hero() {
       if (data.success) {
         setUploadStatus(`✅ ${targetField} permanently replaced in public folder!`);
         const updatedUrl = data.fileUrl;
-        
+
         // Update both temp state and context state immediately
         setTempProfile((prev) => ({
           ...prev,
@@ -129,8 +129,8 @@ function Hero() {
     return customUrl;
   };
 
-  const currentPhotoUrl = activePhoto === 1 
-    ? getPhotoUrl("avatar1", "/profile1.png") 
+  const currentPhotoUrl = activePhoto === 1
+    ? getPhotoUrl("avatar1", "/profile1.png")
     : getPhotoUrl("avatar2", "/profile2.png");
 
   return (

@@ -149,7 +149,7 @@ export default function RecruiterCopilot() {
 
     // Try Real Server-side Free AI Model Endpoint first
     try {
-      const apiRes = await fetch("http://localhost:5000/api/copilot/chat", {
+      const apiRes = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/copilot/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userQuery })

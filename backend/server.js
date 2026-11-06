@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -21,18 +21,43 @@ const configPath = path.join(__dirname, "adminConfig.json");
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
-
+// Helper to load .env file variables
+const loadEnvVars = () => {
+  const envPath = path.join(__dirname, ".env");
+  const envVars = {};
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#")) {
+        const [key, ...vals] = trimmed.split("=");
+        if (key) {
+          envVars[key.trim()] = vals.join("=").trim();
+        }
+      }
+    }
+  }
+  return envVars;
+};
 // Helper to get admin PIN from JSON file
 const getAdminPin = () => {
+  const envVars = loadEnvVars();
+  const adminPin = process.env.ADMIN_PIN || envVars.ADMIN_PIN;
+
+  if (adminPin) {
+    return adminPin;
+  }
+
   if (fs.existsSync(configPath)) {
     try {
       const data = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      return data.adminPin || "1234";
+      return data.adminPin || null;
     } catch (e) {
-      return "1234";
+      return null;
     }
   }
-  return "1234";
+
+  return null;
 };
 
 // Helper to save admin PIN
@@ -80,7 +105,10 @@ app.post("/api/upload-avatar", upload.single("image"), (req, res) => {
 app.post("/api/admin/verify-pin", (req, res) => {
   const { pin } = req.body;
   const currentPin = getAdminPin();
-  if (pin === currentPin || pin === "1234" || pin === "admin123") {
+  console.log("Admin PIN loaded:", Boolean(currentPin));
+  console.log("Stored PIN length:", currentPin?.length);
+  console.log("Entered PIN length:", String(pin || "").length);
+  if (pin === currentPin) {
     return res.json({ success: true, message: "Authentication successful" });
   }
   return res.status(401).json({ success: false, message: "Incorrect Access Key" });
@@ -88,13 +116,30 @@ app.post("/api/admin/verify-pin", (req, res) => {
 
 // POST endpoint to change admin PIN
 app.post("/api/admin/change-pin", (req, res) => {
-  const { newPin } = req.body;
-  if (!newPin || newPin.length < 4) {
-    return res.status(400).json({ success: false, message: "Passcode must be at least 4 characters" });
+  const { currentPin, newPin } = req.body;
+
+  const savedPin = getAdminPin();
+
+  if (!savedPin || currentPin !== savedPin) {
+    return res.status(401).json({
+      success: false,
+      message: "Current PIN is incorrect"
+    });
   }
+
+  if (!newPin || newPin.length < 8) {
+    return res.status(400).json({
+      success: false,
+      message: "New PIN must be at least 8 characters"
+    });
+  }
+
   saveAdminPin(newPin);
-  console.log("Admin PIN updated permanently on server.");
-  return res.json({ success: true, message: "Passcode updated successfully on server!" });
+
+  return res.json({
+    success: true,
+    message: "Passcode updated successfully"
+  });
 });
 
 const portfolioDataPath = path.join(__dirname, "portfolioData.json");
@@ -126,24 +171,7 @@ app.post("/api/portfolio-data", (req, res) => {
   }
 });
 
-// Helper to load .env file variables
-const loadEnvVars = () => {
-  const envPath = path.join(__dirname, ".env");
-  const envVars = {};
-  if (fs.existsSync(envPath)) {
-    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith("#")) {
-        const [key, ...vals] = trimmed.split("=");
-        if (key) {
-          envVars[key.trim()] = vals.join("=").trim();
-        }
-      }
-    }
-  }
-  return envVars;
-};
+
 
 // POST endpoint for Free AI Copilot Chat (Gemini / Groq / Pollinations AI / Fallback RAG)
 app.post("/api/copilot/chat", async (req, res) => {
@@ -267,6 +295,6 @@ Instructions:
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend Upload & Admin Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend running on port ${PORT}`);
 });

@@ -10,6 +10,7 @@ function AdminControlModal({ isOpen, onClose }) {
 
   // Change PIN State
   const [isChangingPin, setIsChangingPin] = useState(false);
+  const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinSuccessMsg, setPinSuccessMsg] = useState("");
@@ -28,24 +29,38 @@ function AdminControlModal({ isOpen, onClose }) {
 
   const handleChangePinSubmit = async (e) => {
     e.preventDefault();
-    if (!newPin || newPin.length < 4) {
-      setError("Passcode must be at least 4 digits/characters!");
+
+    if (!currentPin) {
+      setError("Please enter your current passcode!");
       return;
     }
+
+    if (!newPin || newPin.length < 8) {
+      setError("Passcode must be at least 8 characters!");
+      return;
+    }
+
     if (newPin !== confirmPin) {
       setError("Passcodes do not match!");
       return;
     }
 
-    await changeAdminPin(newPin);
-    setPinSuccessMsg("Secret Passcode changed permanently on Express Server!");
-    setError("");
-    setNewPin("");
-    setConfirmPin("");
-    setTimeout(() => {
-      setPinSuccessMsg("");
-      setIsChangingPin(false);
-    }, 2000);
+    const success = await changeAdminPin(currentPin, newPin);
+
+    if (success) {
+      setPinSuccessMsg("Secret Passcode changed successfully!");
+      setError("");
+      setCurrentPin("");
+      setNewPin("");
+      setConfirmPin("");
+
+      setTimeout(() => {
+        setPinSuccessMsg("");
+        setIsChangingPin(false);
+      }, 2000);
+    } else {
+      setError("Current passcode is incorrect or update failed!");
+    }
   };
 
   if (!isOpen) return null;
@@ -220,6 +235,27 @@ function AdminControlModal({ isOpen, onClose }) {
               </p>
 
               <form onSubmit={handleChangePinSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                    Current Passcode
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={currentPin}
+                    onChange={(e) => setCurrentPin(e.target.value)}
+                    placeholder="Enter current passcode"
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem",
+                      background: "rgba(2, 6, 23, 0.6)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderRadius: "8px",
+                      color: "#fff",
+                      outline: "none",
+                    }}
+                  />
+                </div>
                 <div>
                   <label style={{ display: "block", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
                     New Passcode
