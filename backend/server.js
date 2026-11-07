@@ -434,9 +434,25 @@ Instructions:
           seed: 42
         })
       });
-      const polText = await polRes.text();
-      if (polText && polText.length > 5 && !polText.includes("Error") && !polText.includes("error") && !polText.includes("PAYMENT_REQUIRED")) {
-        return res.json({ success: true, response: polText.trim(), provider: "Free Open Pollinations AI" });
+
+      if (polRes.ok) {
+        const polText = await polRes.text();
+        const isBadResponse =
+          !polText ||
+          polText.length < 5 ||
+          polText.includes("Free limit reached") ||
+          polText.includes("Please wait") ||
+          polText.includes("pollinations.ai") ||
+          polText.includes("pollen key") ||
+          polText.includes("rate limit") ||
+          polText.includes("Error") ||
+          polText.includes("error") ||
+          polText.includes("PAYMENT_REQUIRED");
+
+        if (!isBadResponse) {
+          return res.json({ success: true, response: polText.trim(), provider: "Free Open Pollinations AI" });
+        }
+        console.warn("Pollinations AI returned rate limit/warning, falling back to local RAG engine.");
       }
     } catch (polErr) {
       console.error("Pollinations AI call failed:", polErr);

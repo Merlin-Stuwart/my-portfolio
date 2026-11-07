@@ -157,7 +157,19 @@ export default function RecruiterCopilot() {
       });
       const data = await apiRes.json();
       if (data.success && data.response) {
-        return respond(data.response);
+        const lowerRes = data.response.toLowerCase();
+        const isBad =
+          lowerRes.includes("free limit reached") ||
+          lowerRes.includes("pollinations") ||
+          lowerRes.includes("please wait") ||
+          lowerRes.includes("pollen key") ||
+          lowerRes.includes("rate limit") ||
+          lowerRes.includes("payment_required");
+
+        if (!isBad) {
+          return respond(data.response);
+        }
+        console.warn("External AI returned rate limit text, switching to internal precision RAG engine.");
       }
     } catch (e) {
       console.log("Server AI API offline/error, using local precision fallback:", e);
