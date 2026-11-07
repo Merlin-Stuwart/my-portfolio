@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import {
   profile as defaultProfile,
   summary as defaultSummary,
@@ -9,6 +10,7 @@ import {
   education as defaultEducation,
   certifications as defaultCertifications,
   testimonials as defaultTestimonials,
+  learningConcepts as defaultLearningConcepts,
 } from "./portfolioData";
 
 const PortfolioContext = createContext();
@@ -26,6 +28,7 @@ export const PortfolioProvider = ({ children }) => {
   const [educationData, setEducationData] = useState(defaultEducation);
   const [certificationsData, setCertificationsData] = useState(defaultCertifications);
   const [testimonialsData, setTestimonialsData] = useState(defaultTestimonials);
+  const [learningData, setLearningData] = useState(defaultLearningConcepts || []);
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -47,7 +50,7 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     const fetchServerData = async () => {
       try {
-        const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data");
+        const response = await fetch(`${API_BASE_URL}/api/portfolio-data`);
         const result = await response.json();
         if (result.success && result.data) {
           const d = result.data;
@@ -60,6 +63,7 @@ export const PortfolioProvider = ({ children }) => {
           if (d.education) setEducationData(d.education);
           if (d.certifications) setCertificationsData(d.certifications);
           if (d.testimonials) setTestimonialsData(d.testimonials);
+          if (d.learning) setLearningData(d.learning);
           console.log("Loaded portfolio data from server JSON!");
         }
       } catch (e) {
@@ -83,10 +87,11 @@ export const PortfolioProvider = ({ children }) => {
       education: updatedFields.educationData || educationData,
       certifications: updatedFields.certificationsData || certificationsData,
       testimonials: updatedFields.testimonialsData || testimonialsData,
+      learning: updatedFields.learningData || learningData,
     };
 
     try {
-      await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data", {
+      await fetch(`${API_BASE_URL}/api/portfolio-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fullState),
@@ -143,9 +148,14 @@ export const PortfolioProvider = ({ children }) => {
     syncWithServerJSON({ testimonialsData: newTestimonials });
   };
 
+  const updateLearningData = (newLearning) => {
+    setLearningData(newLearning);
+    syncWithServerJSON({ learningData: newLearning });
+  };
+
   const loginAdmin = async (pin) => {
     try {
-      const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/admin/verify-pin", {
+      const response = await fetch(`${API_BASE_URL}/api/admin/verify-pin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin }),
@@ -163,7 +173,7 @@ export const PortfolioProvider = ({ children }) => {
 
   const changeAdminPin = async (currentPin, newPin) => {
     try {
-      const response = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/admin/change-pin", {
+      const response = await fetch(`${API_BASE_URL}/api/admin/change-pin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPin, newPin }),
@@ -218,6 +228,8 @@ export const PortfolioProvider = ({ children }) => {
     setStatsData(defaultStats);
     setEducationData(defaultEducation);
     setCertificationsData(defaultCertifications);
+    setTestimonialsData(defaultTestimonials);
+    setLearningData(defaultLearningConcepts);
     setAdminPin("1234");
 
     const defaultFullState = {
@@ -229,10 +241,12 @@ export const PortfolioProvider = ({ children }) => {
       stats: defaultStats,
       education: defaultEducation,
       certifications: defaultCertifications,
+      testimonials: defaultTestimonials,
+      learning: defaultLearningConcepts,
     };
 
     try {
-      await fetch("https://my-portfolio-backend-zegg.onrender.com/api/portfolio-data", {
+      await fetch(`${API_BASE_URL}/api/portfolio-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(defaultFullState),
@@ -270,6 +284,8 @@ export const PortfolioProvider = ({ children }) => {
         setCertificationsData: updateCertificationsData,
         testimonialsData,
         setTestimonialsData: updateTestimonialsData,
+        learningData,
+        setLearningData: updateLearningData,
         resetToDefault,
         isLoaded,
         theme,

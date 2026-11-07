@@ -13,6 +13,7 @@ import {
   FiMessageSquare
 } from "react-icons/fi";
 import { usePortfolio } from "../data/PortfolioContext";
+import { API_BASE_URL } from "../config";
 import "./RecruiterCopilot.css";
 
 const PRESET_QUESTIONS = [
@@ -149,7 +150,7 @@ export default function RecruiterCopilot() {
 
     // Try Real Server-side Free AI Model Endpoint first
     try {
-      const apiRes = await fetch("https://my-portfolio-backend-zegg.onrender.com/api/copilot/chat", {
+      const apiRes = await fetch(`${API_BASE_URL}/api/copilot/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userQuery })

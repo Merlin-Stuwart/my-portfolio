@@ -79,6 +79,22 @@ function Navbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Close theme menu on click outside
+  useEffect(() => {
+    if (!isThemeMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".theme-dropdown-container")) {
+        setIsThemeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isThemeMenuOpen]);
+
   return (
     <>
       <header className={`navbar-wrapper ${scrolled ? "scrolled" : ""}`}>
@@ -147,18 +163,15 @@ function Navbar() {
                     ? "theme-fire-btn"
                     : theme === "water"
                     ? "theme-water-btn"
+                    : theme === "forest"
+                    ? "theme-forest-btn"
                     : ""
                 }`}
                 onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
                 title="Switch Portfolio Theme"
+                aria-label="Switch Theme"
               >
-                {theme === "fire" ? (
-                  <FaFire className="theme-btn-icon fire-icon" />
-                ) : theme === "water" ? (
-                  <FaWater className="theme-btn-icon water-icon" />
-                ) : (
-                  <FaBolt className="theme-btn-icon cyber-icon" />
-                )}
+                <FaPalette className="theme-btn-icon" />
                 <span className="theme-btn-text">Themes</span>
                 <FaChevronDown
                   className={`theme-caret ${isThemeMenuOpen ? "open" : ""}`}

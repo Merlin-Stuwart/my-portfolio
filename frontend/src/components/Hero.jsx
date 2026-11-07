@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { usePortfolio } from "../data/PortfolioContext";
+import { API_BASE_URL } from "../config";
 import { FaGithub, FaLinkedin, FaEnvelope, FaPhoneAlt, FaDownload, FaEdit, FaSave, FaTimes, FaCamera } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReactTyped } from "react-typed";
@@ -80,7 +81,7 @@ function Hero() {
     setUploadStatus(`Uploading ${targetField}...`);
 
     try {
-      const response = await fetch(`https://my-portfolio-backend-zegg.onrender.com/api/upload-avatar?targetField=${targetField}`, {
+      const response = await fetch(`${API_BASE_URL}/api/upload-avatar?targetField=${targetField}`, {
         method: "POST",
         body: formData,
       });
@@ -120,6 +121,26 @@ function Hero() {
       reader.readAsDataURL(file);
       setUploadStatus("⚠️ Updated locally (Backend offline)");
     }
+  };
+
+  const handleResumeFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadStatus(`Loading resume: ${file.name}...`);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result;
+      setTempProfile((prev) => ({
+        ...prev,
+        resumeUrl: dataUrl,
+      }));
+      setUploadStatus(`✅ Resume "${file.name}" loaded! Click Save to apply.`);
+    };
+    reader.onerror = () => {
+      setUploadStatus("❌ Failed to read resume file.");
+    };
+    reader.readAsDataURL(file);
   };
 
   // Determine photo URL with cache busting timestamp if it's a public static path
@@ -715,6 +736,90 @@ function Hero() {
                       outline: "none",
                     }}
                   />
+                </div>
+
+                {/* RESUME / CV SETTINGS */}
+                <div style={{ background: "rgba(2, 6, 23, 0.5)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "12px", padding: "1rem" }}>
+                  <h4 style={{ fontSize: "0.9rem", color: "#4ade80", marginBottom: "0.8rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <FaDownload /> Resume / CV Settings
+                  </h4>
+                  <div style={{ marginBottom: "0.8rem" }}>
+                    <label style={{ display: "block", fontSize: "0.8rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                      Upload New Resume File (PDF / DOCX)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleResumeFileUpload}
+                      style={{ fontSize: "0.75rem", color: "#9ca3af" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                      Or Resume URL / Public Path
+                    </label>
+                    <input
+                      type="text"
+                      value={tempProfile.resumeUrl || ""}
+                      onChange={(e) => setTempProfile({ ...tempProfile, resumeUrl: e.target.value })}
+                      placeholder="/Merlin_Stuwart_Resume.pdf or https://drive.google.com/..."
+                      style={{
+                        width: "100%",
+                        padding: "0.6rem 0.8rem",
+                        background: "rgba(2, 6, 23, 0.6)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        outline: "none",
+                        fontSize: "0.85rem",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* SOCIAL PROFILES (GITHUB & LINKEDIN) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                      <FaGithub style={{ marginRight: "0.3rem", color: "#38bdf8" }} /> GitHub URL
+                    </label>
+                    <input
+                      type="text"
+                      value={tempProfile.github || ""}
+                      onChange={(e) => setTempProfile({ ...tempProfile, github: e.target.value })}
+                      placeholder="https://github.com/Merlin-Stuwart"
+                      style={{
+                        width: "100%",
+                        padding: "0.65rem 0.8rem",
+                        background: "rgba(2, 6, 23, 0.6)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                      <FaLinkedin style={{ marginRight: "0.3rem", color: "#38bdf8" }} /> LinkedIn URL
+                    </label>
+                    <input
+                      type="text"
+                      value={tempProfile.linkedin || ""}
+                      onChange={(e) => setTempProfile({ ...tempProfile, linkedin: e.target.value })}
+                      placeholder="https://linkedin.com/in/merlin-stuwart"
+                      style={{
+                        width: "100%",
+                        padding: "0.65rem 0.8rem",
+                        background: "rgba(2, 6, 23, 0.6)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <button

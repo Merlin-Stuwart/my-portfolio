@@ -235,5 +235,13 @@
       "quote": "During his internship, Merlin demonstrated strong analytical skills, attention to detail, and seamless cross-team coordination on complex CRM deliverables.",
       "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=ProjectManager"
     }
+  ],
+  "learning": [
+    "LLM Fine-Tuning & Prompt Engineering",
+    "Retrieval-Augmented Generation (RAG) & Vector Databases",
+    "React.js & Electron Desktop Applications",
+    "FastAPI & RESTful API Architecture",
+    "Docker Containerization & Workflow Automation (n8n)",
+    "Agile/Scrum & Production Bot Deployment"
   ]
 }
