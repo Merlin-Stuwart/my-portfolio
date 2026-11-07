@@ -123,24 +123,113 @@ function Hero() {
     }
   };
 
-  const handleResumeFileUpload = (e) => {
+  const handleResumeFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploadStatus(`Loading resume: ${file.name}...`);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result;
-      setTempProfile((prev) => ({
-        ...prev,
-        resumeUrl: dataUrl,
-      }));
-      setUploadStatus(`✅ Resume "${file.name}" loaded! Click Save to apply.`);
-    };
-    reader.onerror = () => {
-      setUploadStatus("❌ Failed to read resume file.");
-    };
-    reader.readAsDataURL(file);
+    setUploadStatus(`Uploading resume: ${file.name}...`);
+
+    const formData = new FormData();
+    formData.append("targetField", "resume");
+    formData.append("resume", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/upload-resume`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedUrl = data.fileUrl;
+        setUploadStatus(`✅ Resume successfully uploaded and permanently replaced!`);
+        setTempProfile((prev) => ({
+          ...prev,
+          resumeUrl: updatedUrl,
+        }));
+        setProfileData((prev) => ({
+          ...prev,
+          resumeUrl: updatedUrl,
+        }));
+      } else {
+        setUploadStatus("❌ Resume upload failed: " + (data.message || ""));
+      }
+    } catch (err) {
+      console.warn("Backend resume upload error, saving as local preview data URL:", err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result;
+        setTempProfile((prev) => ({
+          ...prev,
+          resumeUrl: dataUrl,
+        }));
+        setProfileData((prev) => ({
+          ...prev,
+          resumeUrl: dataUrl,
+        }));
+      };
+      reader.readAsDataURL(file);
+      setUploadStatus("⚠️ Resume saved locally (Backend offline)");
+    }
+  };
+
+  const handleDownloadResume = async (e) => {
+    e.preventDefault();
+    const resumeUrl = profileData.resumeUrl || "/Merlin_Stuwart_Resume.pdf";
+
+    // 1. If it's a data URL, directly download via <a> tag
+    if (resumeUrl.startsWith("data:")) {
+      const link = document.createElement("a");
+      link.href = resumeUrl;
+      link.download = "Merlin_Stuwart_Resume.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // 2. Fetch as blob so cross-origin, local, or Render URLs download reliably with correct filename
+    try {
+      let fetchUrl = resumeUrl;
+      if (resumeUrl.startsWith("/")) {
+        fetchUrl = `${API_BASE_URL}${resumeUrl}`;
+      }
+
+      const res = await fetch(fetchUrl);
+      if (!res.ok) {
+        // Try fallback to local root if API_BASE_URL path failed
+        if (resumeUrl.startsWith("/")) {
+          const localRes = await fetch(resumeUrl);
+          if (localRes.ok) {
+            const blob = await localRes.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = "Merlin_Stuwart_Resume.pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            return;
+          }
+        }
+        throw new Error("Could not fetch resume from server");
+      }
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "Merlin_Stuwart_Resume.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.warn("Blob download failed, falling back to direct open:", err);
+      const fallbackUrl = resumeUrl.startsWith("/") ? `${API_BASE_URL}${resumeUrl}` : resumeUrl;
+      window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   // Determine photo URL with cache busting timestamp if it's a public static path
@@ -217,11 +306,12 @@ function Hero() {
           </a>
           <a
             href={profileData.resumeUrl || "/Merlin_Stuwart_Resume.pdf"}
+            onClick={handleDownloadResume}
             download="Merlin_Stuwart_Resume.pdf"
             target="_blank"
             rel="noreferrer"
             className="btn-ghost"
-            style={{ border: "1px solid var(--accent-light)", color: "#4ade80" }}
+            style={{ border: "1px solid var(--accent-light)", color: "#4ade80", cursor: "pointer" }}
           >
             <FaDownload /> Download CV
           </a>

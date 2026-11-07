@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePortfolio } from "../data/PortfolioContext";
-import { FaLock, FaKey, FaSignOutAlt, FaShieldAlt, FaTimes, FaUndo, FaCog } from "react-icons/fa";
+import { API_BASE_URL } from "../config";
+import { FaLock, FaKey, FaSignOutAlt, FaShieldAlt, FaTimes, FaUndo, FaCog, FaEnvelope, FaTrash, FaReply, FaArrowLeft, FaArchive } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 function AdminControlModal({ isOpen, onClose }) {
@@ -14,6 +15,81 @@ function AdminControlModal({ isOpen, onClose }) {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinSuccessMsg, setPinSuccessMsg] = useState("");
+
+  // Inquiries / Messages State
+  const [isViewingMessages, setIsViewingMessages] = useState(false);
+  const [messagesList, setMessagesList] = useState([]);
+  const [archivesList, setArchivesList] = useState([]);
+  const [msgLoading, setMsgLoading] = useState(false);
+
+  const fetchMessages = async () => {
+    setMsgLoading(true);
+    let combined = [];
+    let archives = [];
+
+    // 1. Load from browser LocalStorage first
+    try {
+      const local = JSON.parse(localStorage.getItem("portfolio_local_messages") || "[]");
+      if (Array.isArray(local)) {
+        combined = [...local];
+      }
+    } catch (e) {
+      console.warn("Could not read local messages:", e);
+    }
+
+    // 2. Fetch from backend API (if server is active)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/messages`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.messages)) {
+        archives = data.archives || [];
+        const seen = new Set(combined.map((m) => m.id));
+        data.messages.forEach((m) => {
+          if (!seen.has(m.id)) {
+            combined.push(m);
+            seen.add(m.id);
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("Backend offline or unreachable, showing local storage messages:", err);
+    }
+
+    // Sort by timestamp descending
+    combined.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+    setMessagesList(combined);
+    setArchivesList(archives);
+    setMsgLoading(false);
+  };
+
+  const handleOpenMessages = () => {
+    setIsViewingMessages(true);
+    fetchMessages();
+  };
+
+  const handleDeleteMessage = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this message?")) return;
+
+    // Remove from LocalStorage
+    try {
+      const local = JSON.parse(localStorage.getItem("portfolio_local_messages") || "[]");
+      const updated = local.filter((m) => m.id !== id);
+      localStorage.setItem("portfolio_local_messages", JSON.stringify(updated));
+    } catch (e) {}
+
+    // Update state
+    setMessagesList((prev) => prev.filter((m) => m.id !== id));
+
+    // Remove from Backend (if reachable)
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/messages/${id}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.warn("Backend delete skipped:", err);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -90,8 +166,10 @@ function AdminControlModal({ isOpen, onClose }) {
             border: "1px solid rgba(56, 189, 248, 0.3)",
             borderRadius: "20px",
             padding: "2.2rem 2rem",
-            maxWidth: "420px",
+            maxWidth: isViewingMessages ? "620px" : "420px",
             width: "100%",
+            maxHeight: "90vh",
+            overflowY: "auto",
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
             position: "relative",
           }}
@@ -101,6 +179,7 @@ function AdminControlModal({ isOpen, onClose }) {
           <button
             onClick={() => {
               setIsChangingPin(false);
+              setIsViewingMessages(false);
               onClose();
             }}
             style={{
@@ -337,6 +416,162 @@ function AdminControlModal({ isOpen, onClose }) {
                 </div>
               </form>
             </div>
+          ) : isViewingMessages ? (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <button
+                  onClick={() => setIsViewingMessages(false)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "none",
+                    color: "#cbd5e1",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  <FaArrowLeft /> Back
+                </button>
+                <div style={{ fontSize: "0.8rem", color: "#38bdf8", fontWeight: "600" }}>
+                  Active: messages.json ({messagesList.length}/50)
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: "1.2rem", color: "#f3f4f6", fontWeight: "700", marginBottom: "0.3rem" }}>
+                📬 Received Contact Inquiries
+              </h3>
+              <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginBottom: "1rem" }}>
+                Inquiries saved securely in the backend. Old records auto-rotate to keep file lightweight.
+              </p>
+
+              {archivesList.length > 0 && (
+                <div
+                  style={{
+                    background: "rgba(56, 189, 248, 0.1)",
+                    border: "1px solid rgba(56, 189, 248, 0.25)",
+                    borderRadius: "8px",
+                    padding: "0.5rem 0.8rem",
+                    fontSize: "0.75rem",
+                    color: "#7dd3fc",
+                    marginBottom: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                  }}
+                >
+                  <FaArchive /> Archived chunks on disk: {archivesList.join(", ")}
+                </div>
+              )}
+
+              {msgLoading ? (
+                <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
+                  Loading inquiries...
+                </div>
+              ) : messagesList.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "2.5rem 1rem",
+                    color: "#9ca3af",
+                    background: "rgba(2, 6, 23, 0.4)",
+                    borderRadius: "12px",
+                    border: "1px dashed rgba(255, 255, 255, 0.1)",
+                  }}
+                >
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📭</div>
+                  <div style={{ fontWeight: "600", color: "#cbd5e1" }}>No Inquiries Yet</div>
+                  <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "0.2rem" }}>
+                    When visitors submit the contact form, messages will appear here.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", maxHeight: "55vh", overflowY: "auto", paddingRight: "0.3rem" }}>
+                  {messagesList.map((msg) => (
+                    <div
+                      key={msg.id}
+                      style={{
+                        background: "rgba(2, 6, 23, 0.6)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: "12px",
+                        padding: "1rem",
+                        position: "relative",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                        <div>
+                          <div style={{ fontWeight: "700", color: "#f3f4f6", fontSize: "0.95rem" }}>
+                            {msg.name}
+                          </div>
+                          <div style={{ fontSize: "0.75rem", color: "#38bdf8", marginTop: "0.1rem" }}>
+                            {msg.email}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <a
+                            href={`mailto:${encodeURIComponent(msg.email)}?subject=Re: Portfolio Inquiry&body=Hi ${encodeURIComponent(msg.name)},\n\n`}
+                            style={{
+                              padding: "0.3rem 0.6rem",
+                              borderRadius: "6px",
+                              background: "rgba(56, 189, 248, 0.2)",
+                              border: "1px solid rgba(56, 189, 248, 0.4)",
+                              color: "#38bdf8",
+                              fontSize: "0.75rem",
+                              textDecoration: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.3rem",
+                            }}
+                            title="Reply to visitor"
+                          >
+                            <FaReply /> Reply
+                          </a>
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            style={{
+                              padding: "0.3rem 0.5rem",
+                              borderRadius: "6px",
+                              background: "rgba(239, 68, 68, 0.15)",
+                              border: "1px solid rgba(239, 68, 68, 0.3)",
+                              color: "#f87171",
+                              fontSize: "0.75rem",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                            title="Delete inquiry"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: "rgba(15, 23, 42, 0.6)",
+                          padding: "0.7rem",
+                          borderRadius: "8px",
+                          fontSize: "0.85rem",
+                          color: "#cbd5e1",
+                          lineHeight: "1.5",
+                          whiteSpace: "pre-wrap",
+                          border: "1px solid rgba(255, 255, 255, 0.05)",
+                        }}
+                      >
+                        {msg.message}
+                      </div>
+
+                      <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "0.4rem", textAlign: "right" }}>
+                        {msg.dateStr || new Date(msg.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
               <div
@@ -371,6 +606,26 @@ function AdminControlModal({ isOpen, onClose }) {
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
+                <button
+                  onClick={handleOpenMessages}
+                  style={{
+                    padding: "0.8rem",
+                    borderRadius: "10px",
+                    background: "rgba(34, 197, 94, 0.18)",
+                    border: "1px solid rgba(34, 197, 94, 0.4)",
+                    color: "#4ade80",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    boxShadow: "0 4px 12px rgba(34, 197, 94, 0.15)",
+                  }}
+                >
+                  <FaEnvelope /> 📬 View Inquiries & Messages
+                </button>
+
                 <button
                   onClick={() => setIsChangingPin(true)}
                   style={{

@@ -12,11 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Public folder directory (frontend/public — served by Vite)
 const publicDir = path.join(__dirname, "../frontend/public");
 const configPath = path.join(__dirname, "adminConfig.json");
+
+app.use(express.static(publicDir));
 
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
@@ -65,7 +68,7 @@ const saveAdminPin = (newPin) => {
   fs.writeFileSync(configPath, JSON.stringify({ adminPin: newPin }, null, 2), "utf-8");
 };
 
-// Multer Storage to overwrite profile1.png and profile2.png
+// Multer Storage to overwrite profile1.png, profile2.png, and resume PDF
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, publicDir);
@@ -76,6 +79,8 @@ const storage = multer.diskStorage({
       cb(null, "profile1.png");
     } else if (fieldname === "avatar2" || fieldname === "profile2") {
       cb(null, "profile2.png");
+    } else if (fieldname === "resume" || fieldname === "resumeUrl") {
+      cb(null, "Merlin_Stuwart_Resume.pdf");
     } else {
       cb(null, "profile1.png");
     }
@@ -84,7 +89,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// POST endpoint for file upload
+// POST endpoint for file upload (avatars)
 app.post("/api/upload-avatar", upload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: "No file uploaded" });
@@ -99,6 +104,157 @@ app.post("/api/upload-avatar", upload.single("image"), (req, res) => {
     fileUrl,
     message: `File ${fileName} replaced in public folder!`,
   });
+});
+
+// POST endpoint for resume file upload (PDF/DOC/DOCX)
+app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No resume file uploaded" });
+  }
+
+  const fileName = "Merlin_Stuwart_Resume.pdf";
+  const fileUrl = `/${fileName}?v=${Date.now()}`;
+  console.log(`Successfully updated ${fileName} in public folder.`);
+
+  // Auto-update resumeUrl in portfolioData.json if it exists
+  const portfolioDataPath = path.join(__dirname, "portfolioData.json");
+  if (fs.existsSync(portfolioDataPath)) {
+    try {
+      const currentData = JSON.parse(fs.readFileSync(portfolioDataPath, "utf-8"));
+      if (currentData.profile) {
+        currentData.profile.resumeUrl = fileUrl;
+        fs.writeFileSync(portfolioDataPath, JSON.stringify(currentData, null, 2), "utf-8");
+        console.log("Updated resumeUrl in portfolioData.json");
+      }
+    } catch (e) {
+      console.warn("Could not auto-update portfolioData.json with resumeUrl:", e);
+    }
+  }
+
+  return res.json({
+    success: true,
+    fileUrl,
+    message: `Resume file permanently replaced in public folder!`,
+  });
+});
+
+// ==========================================
+// CONTACT INQUIRIES & CHUNKED LOG ROTATION
+// ==========================================
+const MESSAGES_FILE = path.join(__dirname, "messages.json");
+const MAX_MESSAGES_PER_FILE = 50;
+
+if (!fs.existsSync(MESSAGES_FILE)) {
+  try {
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2), "utf-8");
+  } catch (e) {}
+}
+
+const getMessages = () => {
+  if (!fs.existsSync(MESSAGES_FILE)) {
+    return [];
+  }
+  try {
+    return JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
+  } catch (e) {
+    console.error("Error reading messages.json:", e);
+    return [];
+  }
+};
+
+const getArchivesList = () => {
+  try {
+    const files = fs.readdirSync(__dirname);
+    return files
+      .filter((f) => /^messages_\d+\.json$/.test(f))
+      .sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)[0], 10);
+        const numB = parseInt(b.match(/\d+/)[0], 10);
+        return numA - numB;
+      });
+  } catch (e) {
+    return [];
+  }
+};
+
+const saveMessageWithRotation = (newMessage) => {
+  let messages = getMessages();
+  messages.unshift(newMessage); // Latest inquiries on top
+
+  // Auto-rotate when limit is reached
+  if (messages.length > MAX_MESSAGES_PER_FILE) {
+    let archiveIndex = 1;
+    while (fs.existsSync(path.join(__dirname, `messages_${archiveIndex}.json`))) {
+      archiveIndex++;
+    }
+    const olderMessages = messages.slice(MAX_MESSAGES_PER_FILE);
+    fs.writeFileSync(
+      path.join(__dirname, `messages_${archiveIndex}.json`),
+      JSON.stringify(olderMessages, null, 2),
+      "utf-8"
+    );
+    console.log(`Rotated ${olderMessages.length} older messages into messages_${archiveIndex}.json`);
+
+    // Keep active file under MAX_MESSAGES_PER_FILE
+    messages = messages.slice(0, MAX_MESSAGES_PER_FILE);
+  }
+
+  fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), "utf-8");
+  return messages;
+};
+
+// POST: Save new visitor contact inquiry
+app.post("/api/contact", (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ success: false, message: "Name, email, and message are required." });
+  }
+
+  const newEntry = {
+    id: "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    name: String(name).trim(),
+    email: String(email).trim(),
+    message: String(message).trim(),
+    timestamp: new Date().toISOString(),
+    dateStr: new Date().toLocaleString(),
+    isRead: false,
+  };
+
+  try {
+    saveMessageWithRotation(newEntry);
+    console.log(`Saved new contact inquiry from ${newEntry.name} (${newEntry.email})`);
+    return res.json({
+      success: true,
+      message: "Inquiry saved successfully in portfolio database!",
+      entry: newEntry,
+    });
+  } catch (err) {
+    console.error("Failed to save contact message:", err);
+    return res.status(500).json({ success: false, message: "Could not save message to database." });
+  }
+});
+
+// GET: Fetch all active inquiries (for Admin Mode)
+app.get("/api/admin/messages", (req, res) => {
+  const messages = getMessages();
+  const archives = getArchivesList();
+  return res.json({
+    success: true,
+    count: messages.length,
+    maxPerFile: MAX_MESSAGES_PER_FILE,
+    messages,
+    archives,
+  });
+});
+
+// DELETE: Delete a specific message by ID
+app.delete("/api/admin/messages/:id", (req, res) => {
+  const { id } = req.params;
+  let messages = getMessages();
+  const filtered = messages.filter((m) => m.id !== id);
+  fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2), "utf-8");
+  return res.json({ success: true, message: "Message deleted successfully." });
 });
 
 // POST endpoint to verify admin PIN

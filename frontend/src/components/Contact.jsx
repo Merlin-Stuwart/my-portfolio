@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import { profile } from "../data/portfolioData";
+import { usePortfolio } from "../data/PortfolioContext";
+import { API_BASE_URL } from "../config";
 import { FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaCopy, FaCheck, FaPaperPlane, FaSpinner, FaCheckCircle, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 function Contact() {
+  const { profileData } = usePortfolio();
+  const targetEmail = profileData?.email || profile.email || "merlinstuwart05@gmail.com";
+  const targetPhone = profileData?.phone || profile.phone || "+91 6379113226";
+  const targetLocation = profileData?.location || profile.location || "Bangalore, India";
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -51,47 +58,62 @@ function Contact() {
 
     setLoading(true);
 
+    const localEntry = {
+      id: "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+      name: form.name.trim(),
+      email: form.email.trim(),
+      message: form.message.trim(),
+      timestamp: new Date().toISOString(),
+      dateStr: new Date().toLocaleString(),
+    };
+
+    // 1. Always save immediately to LocalStorage (100% offline & local safe fallback)
     try {
-      const response = await fetch(`https://formsubmit.co/ajax/${profile.email}`, {
+      const stored = JSON.parse(localStorage.getItem("portfolio_local_messages") || "[]");
+      stored.unshift(localEntry);
+      localStorage.setItem("portfolio_local_messages", JSON.stringify(stored));
+      console.log("Inquiry saved locally in browser storage!");
+    } catch (e) {
+      console.warn("Could not save to localStorage:", e);
+    }
+
+    // 2. Save message to backend database with chunked log rotation
+    try {
+      await fetch(`${API_BASE_URL}/api/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
         },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
           message: form.message,
-          _subject: `⚡ Portfolio Contact Inquiry from ${form.name}`,
-          _captcha: "false",
         }),
       });
-
-      const data = await response.json();
-
-      if (response.ok || data.success === "true" || data.success === true) {
-        setForm({ name: "", email: "", message: "" });
-        setShowSuccessModal(true);
-        setTimeout(() => setShowSuccessModal(false), 4500);
-      } else {
-        // Fallback
-        const subject = encodeURIComponent(`Portfolio Inquiry from ${form.name}`);
-        const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(profile.email)}&su=${subject}&body=${body}`, "_blank");
-        setForm({ name: "", email: "", message: "" });
-        setShowSuccessModal(true);
-        setTimeout(() => setShowSuccessModal(false), 4500);
-      }
+      console.log("Inquiry saved to backend messages database!");
     } catch (err) {
-      const subject = encodeURIComponent(`Portfolio Inquiry from ${form.name}`);
-      const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
-      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(profile.email)}&su=${subject}&body=${body}`, "_blank");
-      setForm({ name: "", email: "", message: "" });
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 4500);
-    } finally {
-      setLoading(false);
+      console.warn("Backend save skipped or offline:", err);
     }
+
+    // 3. Open Direct Email Draft to merlinstuwart05@gmail.com
+    const subject = encodeURIComponent(`⚡ Portfolio Inquiry from ${form.name}`);
+    const body = encodeURIComponent(
+      `Hi Merlin,\n\n${form.message}\n\n---\nSender Details:\nName: ${form.name}\nEmail: ${form.email}`
+    );
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}&su=${subject}&body=${body}`;
+
+    try {
+      const popup = window.open(gmailUrl, "_blank");
+      if (!popup || popup.closed || typeof popup.closed === "undefined") {
+        window.location.href = `mailto:${encodeURIComponent(targetEmail)}?subject=${subject}&body=${body}`;
+      }
+    } catch (e) {
+      window.location.href = `mailto:${encodeURIComponent(targetEmail)}?subject=${subject}&body=${body}`;
+    }
+
+    setForm({ name: "", email: "", message: "" });
+    setShowSuccessModal(true);
+    setLoading(false);
   };
 
   return (
@@ -223,12 +245,12 @@ function Contact() {
                   <div>
                     <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Email Address</div>
                     <div style={{ fontSize: "0.92rem", fontWeight: "600", color: "#f3f4f6" }}>
-                      {profile.email}
+                      {targetEmail}
                     </div>
                   </div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(profile.email, "email")}
+                  onClick={() => copyToClipboard(targetEmail, "email")}
                   style={{
                     background: "none",
                     border: "none",
@@ -260,12 +282,12 @@ function Contact() {
                   <div>
                     <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Phone / WhatsApp</div>
                     <div style={{ fontSize: "0.92rem", fontWeight: "600", color: "#f3f4f6" }}>
-                      {profile.phone}
+                      {targetPhone}
                     </div>
                   </div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(profile.phone, "phone")}
+                  onClick={() => copyToClipboard(targetPhone, "phone")}
                   style={{
                     background: "none",
                     border: "none",
@@ -296,7 +318,7 @@ function Contact() {
                 <div>
                   <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Location</div>
                   <div style={{ fontSize: "0.92rem", fontWeight: "600", color: "#f3f4f6" }}>
-                    {profile.location}
+                    {targetLocation}
                   </div>
                 </div>
               </div>
@@ -420,7 +442,7 @@ function Contact() {
               </h3>
 
               <p style={{ color: "#9ca3af", fontSize: "0.92rem", lineHeight: "1.6", marginBottom: "1.6rem" }}>
-                Your message has been delivered directly to Merlin’s inbox. The form has been reset for new entries!
+                Your inquiry has been safely saved in Merlin's portfolio inbox and a direct email draft was dispatched!
               </p>
 
               <button
