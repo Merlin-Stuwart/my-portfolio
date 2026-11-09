@@ -138,6 +138,15 @@ app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
   });
 });
 
+// GET endpoint to force direct attachment download of resume (works on all browsers & mobile)
+app.get("/api/download-resume", (req, res) => {
+  const resumePath = path.join(publicDir, "Merlin_Stuwart_Resume.pdf");
+  if (fs.existsSync(resumePath)) {
+    return res.download(resumePath, "Merlin_Stuwart_Resume.pdf");
+  }
+  return res.status(404).json({ success: false, message: "Resume file not found" });
+});
+
 // ==========================================
 // CONTACT INQUIRIES & CHUNKED LOG ROTATION
 // ==========================================

@@ -174,11 +174,16 @@ function Hero() {
   };
 
   const handleDownloadResume = async (e) => {
-    e.preventDefault();
     const resumeUrl = profileData.resumeUrl || "/Merlin_Stuwart_Resume.pdf";
 
-    // 1. If it's a data URL, directly download via <a> tag
+    // 1. If it's an external link (e.g. Google Drive)
+    if (resumeUrl.startsWith("http://") || resumeUrl.startsWith("https://")) {
+      return; // Allow native navigation to external URL
+    }
+
+    // 2. If it's a data URL (offline base64)
     if (resumeUrl.startsWith("data:")) {
+      e.preventDefault();
       const link = document.createElement("a");
       link.href = resumeUrl;
       link.download = "Merlin_Stuwart_Resume.pdf";
@@ -188,32 +193,31 @@ function Hero() {
       return;
     }
 
-    // 2. Fetch as blob so cross-origin, local, or Render URLs download reliably with correct filename
-    try {
-      let fetchUrl = resumeUrl;
-      if (resumeUrl.startsWith("/")) {
-        fetchUrl = `${API_BASE_URL}${resumeUrl}`;
-      }
+    // 3. Mobile Device handling (Android, iPhone, iPad, tablets):
+    // On mobile browsers (iOS Safari, Android Chrome), programmatic blob download
+    // after an async fetch() is blocked by browser security (unsolicited download policy).
+    // Allowing the native anchor tag click to proceed triggers native download on Android
+    // and native PDF preview/save on iOS without being blocked!
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.innerWidth <= 1024) ||
+      window.innerWidth <= 768;
 
-      const res = await fetch(fetchUrl);
+    if (isMobile) {
+      return; // Do NOT preventDefault! Let native <a> click download/open directly
+    }
+
+    // 4. Laptop / Desktop handling:
+    // On laptop/desktop, fetch as Blob and click to force saving directly to Downloads folder
+    e.preventDefault();
+    try {
+      // First try same-origin path (instant 0ms response)
+      let res = await fetch(resumeUrl);
+      if (!res.ok && resumeUrl.startsWith("/")) {
+        res = await fetch(`${API_BASE_URL}${resumeUrl}`);
+      }
       if (!res.ok) {
-        // Try fallback to local root if API_BASE_URL path failed
-        if (resumeUrl.startsWith("/")) {
-          const localRes = await fetch(resumeUrl);
-          if (localRes.ok) {
-            const blob = await localRes.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = blobUrl;
-            link.download = "Merlin_Stuwart_Resume.pdf";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-            return;
-          }
-        }
-        throw new Error("Could not fetch resume from server");
+        throw new Error("Could not fetch resume file");
       }
 
       const blob = await res.blob();
@@ -226,8 +230,8 @@ function Hero() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.warn("Blob download failed, falling back to direct open:", err);
-      const fallbackUrl = resumeUrl.startsWith("/") ? `${API_BASE_URL}${resumeUrl}` : resumeUrl;
+      console.warn("Desktop blob download failed, falling back to direct open:", err);
+      const fallbackUrl = resumeUrl.startsWith("/") ? resumeUrl : `${API_BASE_URL}${resumeUrl}`;
       window.open(fallbackUrl, "_blank", "noopener,noreferrer");
     }
   };

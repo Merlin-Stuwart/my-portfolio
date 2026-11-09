@@ -591,7 +591,7 @@ Featured Project: ${selectedRole.keyProject}`;
 
             {/* Quick Action Footer Links */}
             <div className="quick-actions">
-              <a href={profileData.resumeUrl || "/Merlin_Stuwart_Resume.pdf"} download className="action-chip" target="_blank" rel="noreferrer">
+              <a href={profileData.resumeUrl || "/Merlin_Stuwart_Resume.pdf"} download="Merlin_Stuwart_Resume.pdf" className="action-chip" target="_blank" rel="noreferrer">
                 <FiFileText /> Resume PDF
               </a>
               <a
