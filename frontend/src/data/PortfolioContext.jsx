@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { API_BASE_URL } from "../config";
 import {
   profile as defaultProfile,
@@ -31,6 +31,23 @@ export const PortfolioProvider = ({ children }) => {
   const [learningData, setLearningData] = useState(defaultLearningConcepts || []);
 
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // ─── useRef mirrors: always hold the LATEST state values ───────────────────
+  // This eliminates stale-closure bugs in syncWithServerJSON.
+  const latestRef = useRef({});
+  latestRef.current = {
+    profileData,
+    summaryData,
+    skillsData,
+    experiencesData,
+    projectsData,
+    statsData,
+    educationData,
+    certificationsData,
+    testimonialsData,
+    learningData,
+  };
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Theme State ('cyber' | 'fire')
   const [theme, setThemeState] = useState(() => {
@@ -75,32 +92,41 @@ export const PortfolioProvider = ({ children }) => {
     fetchServerData();
   }, []);
 
-  // Save changes to backend server JSON (portfolioData.json)
+  // ─── Save changes to backend server JSON (portfolioData.json) ──────────────
+  // FIX: Always read from latestRef.current so we NEVER send stale state.
+  //      The caller can optionally override specific fields via `updatedFields`.
   const syncWithServerJSON = async (updatedFields = {}) => {
+    const latest = latestRef.current;
     const fullState = {
-      profile: updatedFields.profileData || profileData,
-      summary: updatedFields.summaryData || summaryData,
-      skills: updatedFields.skillsData || skillsData,
-      experiences: updatedFields.experiencesData || experiencesData,
-      projects: updatedFields.projectsData || projectsData,
-      stats: updatedFields.statsData || statsData,
-      education: updatedFields.educationData || educationData,
-      certifications: updatedFields.certificationsData || certificationsData,
-      testimonials: updatedFields.testimonialsData || testimonialsData,
-      learning: updatedFields.learningData || learningData,
+      profile:        updatedFields.profileData        ?? latest.profileData,
+      summary:        updatedFields.summaryData        ?? latest.summaryData,
+      skills:         updatedFields.skillsData         ?? latest.skillsData,
+      experiences:    updatedFields.experiencesData    ?? latest.experiencesData,
+      projects:       updatedFields.projectsData       ?? latest.projectsData,
+      stats:          updatedFields.statsData          ?? latest.statsData,
+      education:      updatedFields.educationData      ?? latest.educationData,
+      certifications: updatedFields.certificationsData ?? latest.certificationsData,
+      testimonials:   updatedFields.testimonialsData   ?? latest.testimonialsData,
+      learning:       updatedFields.learningData       ?? latest.learningData,
     };
 
     try {
-      await fetch(`${API_BASE_URL}/api/portfolio-data`, {
+      const res = await fetch(`${API_BASE_URL}/api/portfolio-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fullState),
       });
-      console.log("Portfolio state synchronized with server portfolioData.json");
+      const data = await res.json();
+      if (data.success) {
+        console.log("✅ Portfolio state synchronized with server portfolioData.json");
+      } else {
+        console.warn("Server sync returned failure:", data);
+      }
     } catch (e) {
       console.warn("Error syncing portfolio state to server JSON:", e);
     }
   };
+  // ───────────────────────────────────────────────────────────────────────────
 
   // State Wrappers with Auto Server-JSON Sync
   const updateProfileData = (newProfile) => {
